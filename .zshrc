@@ -71,9 +71,10 @@ ZSH_THEME="robbyrussell"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-    git
-    zsh-autosuggestions
-    zsh-syntax-highlighting
+  git
+  poetry
+  zsh-autosuggestions
+  zsh-syntax-highlighting
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -101,15 +102,24 @@ source $ZSH/oh-my-zsh.sh
 # For a full list of active aliases, run `alias`.
 #
 # Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+alias zshconfig="mate ~/.zshrc"
+alias ohmyzsh="mate ~/.oh-my-zsh"
 
-alias arm="env /usr/bin/arch -arm64 /bin/zsh --login"
-alias x86="env /usr/bin/arch -x86_64 /bin/zsh --login"
-alias devrun="doppler run --preserve-env -- sh docker/scripts/run.sh"
-alias devdown="doppler run --preserve-env -- sh docker/scripts/run.sh down"
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-# git commands
+
+export PATH="/Users/vicentemerino/.local/bin:$PATH"
+
+alias dc="docker-compose"
+
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
+
+
 function git_add_recursive() {
     git add "./*$1*"
 }
@@ -133,27 +143,19 @@ alias gstp="git stash pop"
 alias gps="git push"
 alias gpsu="git push --set-upstream origin $(git_current_branch)"
 
-# black formatter
-function black_branch_formatter() {
-    a=$(git diff --name-only --diff-filter=d '*.py' | grep -v 'migrations')
-    b=$(git ls-files --others --exclude-standard '*.py')
-    if [ "$a" = "" || "$b" = "" ]; then
-        echo "No python files to black"
-    else
-        black --line-length 100 $(echo $a)
-        black --line-length 100 $(echo $b)
-    fi
+export PATH="$PATH:./node_modules/.bin"
+alias mjmlu="mjml --watch $1.mjml -o $1.html"
+
+
+function git_branch_rename() {
+    git branch -m $1 $2
+    git push origin :$1 $2
+    git push origin -u $2
 }
 
-alias bsm=black_branch_formatter
+alias gbr=git_branch_rename
 
-code() { VSCODE_CWD="$PWD" open -n -b "com.microsoft.VSCode" --args $*; }
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
-export FLYCTL_INSTALL="/Users/vicentemerino/.fly"
-export PATH="$FLYCTL_INSTALL/bin:$PATH"
-
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
+alias gbdr='git branch --merged | egrep -v "(^\*|master|main|dev|development|qa)" | xargs git branch -d'
+autoload -Uz compinit
+zstyle ':completion:*' menu select
+fpath+=~/.zfunc
